@@ -1,5 +1,5 @@
-const e = require('express');
-const Product = require('../models/Product');
+const express = require('express');
+const Cart = require('../models/Cart');
 const {
   verifyToken,
   verifyTokenAndAutharization,
@@ -9,27 +9,27 @@ const {
 const router = require('express').Router();
 
 //CREATE
-router.post('/', verifyTokenAndAdmin, async (req, res) => {
-  const newProduct = new Product(req.body);
+router.post('/', verifyToken, async (req, res) => {
+  const newCart = new Cart(req.body);
 
   try {
-    const savedProduct = await newProduct.save();
-    res.status(200).json(savedProduct);
+    const savedCart = await newCart.save();
+    res.status(200).json(savedCart);
   } catch (error) {
-    res.status(500).json('you are not admin');
+    res.status(500).json(error);
   }
 });
 //UPDATE
-router.put('/:id', verifyTokenAndAdmin, async (req, res) => {
+router.put('/:id', verifyTokenAndAutharization, async (req, res) => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(
+    const updatedCart = await Cart.findByIdAndUpdate(
       req.params.id,
       {
         $set: req.body,
       },
       { new: true }
     );
-    res.status(200).json(updatedProduct);
+    res.status(200).json(updatedCart);
   } catch (error) {
     res.status(500).json(error);
   }
@@ -37,46 +37,31 @@ router.put('/:id', verifyTokenAndAdmin, async (req, res) => {
 
 //DELETE
 
-router.delete('/:id', verifyTokenAndAdmin, async (req, res) => {
+router.delete('/:id', verifyTokenAndAutharization, async (req, res) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
+    await Cart.findByIdAndDelete(req.params.id);
     res.status(200).json('product DELETED ....');
   } catch (error) {
     res.status(500).json(error);
   }
 });
 
-//get singlr Product
-router.get('/find/:id', async (req, res) => {
+//get user Cart
+router.get('/find/:userId', verifyTokenAndAutharization, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const cart = await Cart.findOne({ userId: req.params.userId });
 
-    res.status(200).json(product);
+    res.status(200).json(cart);
   } catch (error) {
     res.status(500).json(error);
   }
 });
 
-//get all user
-router.get('/', async (req, res) => {
-  const qNew = req.query.new;
-  const qCategory = req.query.category;
+//get all
+router.get('/', verifyTokenAndAdmin, async (req, res) => {
   try {
-    let products;
-
-    if (qNew) {
-      products = await Product.find().sort({ createdAt: -1 }).limit(5);
-    } else if (qCategory) {
-      products = await Product.find({
-        categories: {
-          $in: [qCategory],
-        },
-      });
-    } else {
-      products = await Product.find();
-    }
-
-    res.status(200).json(products);
+    const carts = await Cart.find();
+    res.status(200).json(carts);
   } catch (error) {
     res.status(500).json(error);
   }
